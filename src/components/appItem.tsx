@@ -1,23 +1,27 @@
-import type {
-  LegacyRef,
-  ChangeEventHandler,
-  KeyboardEventHandler,
-  RefObject,
+import {
+  type ChangeEventHandler,
+  type KeyboardEventHandler,
+  useRef,
+  useEffect,
+  Fragment,
 } from "react";
 import { useMenuContext } from "~/contexts/menuContext";
 
 const MENU_TRIGGER = "/";
 
-export function AppItemCopy(props: {
-  copyRef: LegacyRef<HTMLDivElement>;
-  caretSpanRef: LegacyRef<HTMLSpanElement>;
-  value: string;
-}) {
-  const { value, copyRef, caretSpanRef } = props;
-  const {lastSelection} = useMenuContext();
+// This div needs to have identical styles with textarea of the AppItem component
+export function AppItemCopy() {
+  const caretSpanRef = useRef<HTMLSpanElement>(null);
+
+  const { copiedValue:value , lastSelection, setSpanRect } = useMenuContext();
+
+  useEffect(() => {
+    const caretRect = caretSpanRef.current?.getBoundingClientRect();
+    setSpanRect(caretRect);
+  }, [lastSelection, setSpanRect]);
 
   return (
-    <div className="absolute bottom-[-100px] left-0 text-white" ref={copyRef}>
+    <div className="absolute bottom-[0px] left-0 text-white">
       {value.substring(0, lastSelection).replace(/\s/g, "\u00a0")}
       <span ref={caretSpanRef}>.</span>
       {value.substring(lastSelection).replace(/\s/g, "\u00a0")}
@@ -28,15 +32,10 @@ export function AppItemCopy(props: {
 export default function AppItem(props: {
   value: string;
   setValue: (v: string) => void;
-
-  textAreaRef: LegacyRef<HTMLTextAreaElement>;
-  copyRef: RefObject<HTMLDivElement>;
-  caretSpanRef: RefObject<HTMLSpanElement>;
 }) {
-  const { textAreaRef, copyRef, caretSpanRef } = props;
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
-  const {setLastSelection, setMenuPosition} = useMenuContext();
-
+  const { spanRect, setCopiedValue, setLastSelection, setMenuPosition } = useMenuContext();
 
   const handleValueChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
     const element = e.target;
@@ -46,36 +45,36 @@ export default function AppItem(props: {
     const selectionStart = element.selectionStart;
     const selectionEnd = element.selectionEnd;
 
-    if (copyRef.current && selectionStart === selectionEnd) {
+    if (selectionStart === selectionEnd) {
       setLastSelection(selectionStart);
+      setCopiedValue(value);
     }
   };
 
   const handleKeyUp: KeyboardEventHandler<HTMLTextAreaElement> = (e) => {
     if (e.key === MENU_TRIGGER) {
-      const caretRect = caretSpanRef.current?.getBoundingClientRect();
+      const taRect = textAreaRef.current?.getBoundingClientRect();
 
-      const taRect = (
-        textAreaRef as RefObject<HTMLTextAreaElement>
-      ).current?.getBoundingClientRect();
+      if (!spanRect || !taRect) return;
 
-      if (!caretRect || !taRect) return;
+      setMenuPosition([spanRect.x, taRect.y + taRect.height]);
 
-      setMenuPosition([caretRect.x, taRect.y + taRect.height]);
     } else {
       setMenuPosition(undefined);
     }
   };
 
   return (
-    <textarea
-      ref={textAreaRef}
-      rows={1}
-      className="text-black"
-      style={{ resize: "both" }}
-      value={props.value}
-      onChange={handleValueChange}
-      onKeyUp={handleKeyUp}
-    />
+    <Fragment>
+      <textarea
+        ref={textAreaRef}
+        rows={1}
+        className="text-md text-black"
+        style={{ resize: "both" }}
+        value={props.value}
+        onChange={handleValueChange}
+        onKeyUp={handleKeyUp}
+      />
+    </Fragment>
   );
 }

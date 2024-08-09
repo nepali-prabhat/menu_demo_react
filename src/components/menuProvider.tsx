@@ -8,7 +8,10 @@ export type MenuContextType = ReturnType<typeof useMenu>;
 function useMenu() {
 
   const [lastSelection, setLastSelection] = useState<number>(0);
+  const [copiedValue, setCopiedValue] = useState<string>("");
+
   const [menuPosition, setMenuPosition] = useState<[number, number]>();
+  const [spanRect, setSpanRect] = useState<DOMRect|undefined>(undefined);
 
   const handleEscape = useCallback(() => {
     setMenuPosition(undefined);
@@ -17,11 +20,17 @@ function useMenu() {
   useGlobalEscape(handleEscape);
 
   return {
+    copiedValue,
+    setCopiedValue,
+
     lastSelection,
     setLastSelection,
+
     menuPosition,
     setMenuPosition,
-    handleEscape
+
+    spanRect,
+    setSpanRect,
   };
 }
 
