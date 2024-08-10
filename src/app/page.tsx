@@ -29,8 +29,8 @@ export default function App() {
             />
           ))}
         </div>
-       {client && createPortal(<Menu />, document.body)}
-      {client && createPortal(<AppItemCopy />, document.body)}
+        {client && createPortal(<Menu />, document.body)}
+        {client && createPortal(<AppItemCopy />, document.body)}
       </MenuProvider>
     </div>
   );
